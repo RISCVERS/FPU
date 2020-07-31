@@ -48,7 +48,10 @@ val defaultVersions = Map(
 libraryDependencies ++= Seq("chisel3","chisel-iotesters").map {
   dep: String => "edu.berkeley.cs" %% dep % sys.props.getOrElse(dep + "Version", defaultVersions(dep)) }
 
-libraryDependencies += "edu.berkeley.cs" %% "chiseltest" % "0.2-SNAPSHOT"
+
+lazy val chiseltest = (project in file("./chisel-testers2"))
+
+dependsOn(chiseltest)
 
 scalacOptions ++= scalacOptionsVersion(scalaVersion.value)
 

@@ -1,0 +1,4 @@
+[submodule "chisel-testers2"]
+	path = chisel-testers2
+	url = https://github.com/ljwljwljwljw/chisel-testers2.git
+	branch = adapt-new-verilator
