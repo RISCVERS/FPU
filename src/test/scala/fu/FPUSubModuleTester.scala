@@ -26,6 +26,7 @@ class MyDecoupledDriver[T <: Data](x: ReadyValidIO[T]) extends DecoupledDriver[T
       x.bits.expect(data, message)
     }.joinAndStep(getSinkClock)
   }
+
   def expectDequeueSeq(data: Seq[T], message: => Seq[String]): Unit = timescope {
     for ((elt, msg) <- data.zip(message)) {
       expectDequeue(elt, msg)
@@ -116,8 +117,8 @@ class FPUSubModuleTester extends FlatSpec
 
   val tests = fma_tests ++ fadd_tests ++ fmul_tests ++
     sqrt_tests ++ div_tests ++
-      fcmp_tests ++ i2f_tests ++
-      f2i_tests ++ f2f_tests
+    fcmp_tests ++ i2f_tests ++
+    f2i_tests ++ f2f_tests
 
   val backendMap = Map(
     "treadle" -> TreadleBackendAnnotation,
@@ -182,7 +183,10 @@ class FPUSubModuleTester extends FlatSpec
   def readLines(bufReader: BufferedReader, n: Int): List[String] = {
     var lines = List[String]()
     var line = ""
-    while ( (lines.size < n) && {line = bufReader.readLine(); line!=null}){
+    while ((lines.size < n) && {
+      line = bufReader.readLine();
+      line != null
+    }) {
       lines = lines :+ line
     }
     lines
@@ -201,17 +205,24 @@ class FPUSubModuleTester extends FlatSpec
 
         val bufferInputStrem = new BufferedInputStream(new FileInputStream(file))
         val bufferReader = new BufferedReader(new InputStreamReader(bufferInputStrem), 10 * 1024 * 1024)
+
         def batchSize = 10000
+
         var input = List[String]()
-        while ({input = readLines(bufferReader, batchSize); input.nonEmpty}){
-          //...
-          val testCases = input.map(_.split(" "))
-          val annos = Seq(backendMap(t.backend)) ++ (if(t.writeVcd) Seq(WriteVcdAnnotation) else Nil)
-          test(new Delayer(dutGen())).withAnnotations(annos){ c =>
-            c.io.in.initSource().setSourceClock(c.clock)
-            c.io.out.initSink().setSinkClock(c.clock)
-            c.io.out.expectInvalid()
-            c.io.out.ready.poke(true.B)
+        val annos = Seq(backendMap(t.backend)) ++ (if (t.writeVcd) Seq(WriteVcdAnnotation) else Nil)
+        test(new Delayer(dutGen())).withAnnotations(annos) { c =>
+
+          c.io.in.initSource().setSourceClock(c.clock)
+          c.io.out.initSink().setSinkClock(c.clock)
+          c.io.out.expectInvalid()
+          c.io.out.ready.poke(true.B)
+
+          while ( {
+            input = readLines(bufferReader, batchSize)
+            input.nonEmpty
+          }) {
+            //...
+            val testCases = input.map(_.split(" "))
 
             def dutEnQueue(testCase: Array[String], idx: Int): Unit = {
               val srcCnt = testCases.length - 2 // - output - fflags
@@ -262,10 +273,9 @@ class FPUSubModuleTester extends FlatSpec
                 dutDeQueue(testCase, idx)
               })
             }
-
           }
+          file.delete()
         }
-        file.delete()
       }
     }
   }
